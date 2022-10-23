@@ -202,35 +202,38 @@ impl Recorder {
         // for more detail on the fields
         // and what's expected: https://kubernetes.io/docs/reference/using-api/deprecation-guide/#event-v125
         self.events
-            .create(&PostParams::default(), &CoreEvent {
-                action: Some(ev.action),
-                reason: Some(ev.reason),
-                deprecated_count: None,
-                deprecated_first_timestamp: None,
-                deprecated_last_timestamp: None,
-                deprecated_source: None,
-                event_time: MicroTime(Utc::now()),
-                regarding: Some(self.reference.clone()),
-                note: ev.note.map(Into::into),
-                metadata: ObjectMeta {
-                    namespace: self.reference.namespace.clone(),
-                    generate_name: Some(format!("{}-", self.reporter.controller)),
-                    ..Default::default()
+            .create(
+                &PostParams::default(),
+                &CoreEvent {
+                    action: Some(ev.action),
+                    reason: Some(ev.reason),
+                    deprecated_count: None,
+                    deprecated_first_timestamp: None,
+                    deprecated_last_timestamp: None,
+                    deprecated_source: None,
+                    event_time: MicroTime(Utc::now()),
+                    regarding: Some(self.reference.clone()),
+                    note: ev.note.map(Into::into),
+                    metadata: ObjectMeta {
+                        namespace: self.reference.namespace.clone(),
+                        generate_name: Some(format!("{}-", self.reporter.controller)),
+                        ..Default::default()
+                    },
+                    reporting_controller: Some(self.reporter.controller.clone()),
+                    reporting_instance: Some(
+                        self.reporter
+                            .instance
+                            .clone()
+                            .unwrap_or_else(|| self.reporter.controller.clone()),
+                    ),
+                    series: None,
+                    type_: match ev.type_ {
+                        EventType::Normal => Some("Normal".into()),
+                        EventType::Warning => Some("Warning".into()),
+                    },
+                    related: ev.secondary,
                 },
-                reporting_controller: Some(self.reporter.controller.clone()),
-                reporting_instance: Some(
-                    self.reporter
-                        .instance
-                        .clone()
-                        .unwrap_or_else(|| self.reporter.controller.clone()),
-                ),
-                series: None,
-                type_: match ev.type_ {
-                    EventType::Normal => Some("Normal".into()),
-                    EventType::Warning => Some("Warning".into()),
-                },
-                related: ev.secondary,
-            })
+            )
             .await?;
         Ok(())
     }
