@@ -18,6 +18,7 @@
 #![allow(clippy::semicolon_if_nothing_returned)]
 
 pub mod controller;
+pub mod coordination;
 pub mod events;
 
 pub mod finalizer;
